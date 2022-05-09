@@ -39,7 +39,16 @@ parser.add_argument('--droprate', default=0.4, type=float, help='dropout probabi
 parser.add_argument('--load', '-l', type=str, default='./snapshots', help='Checkpoint path to resume / test.')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching threads.')
+parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'MC_dropout'], default='MSP')
+parser.add_argument('--ens1', type=str, default='', help='Checkpoint path (file) for 1st model for ensemble.')
+parser.add_argument('--ens2', type=str, default='', help='Checkpoint path (file) for 2nd model for ensemble.')
+parser.add_argument('--ens3', type=str, default='', help='Checkpoint path (file) for 3rd model for ensemble.')
+parser.add_argument('--mc_dropout_iters', type=int, default=4, help='number of forward pass for each image in Monte Carlo dropout.')
 args = parser.parse_args()
+
+is_ensemble = (args.ood_method == 'Ensemble')
+if is_ensemble:
+    args.load = ''
 
 # torch.manual_seed(1)
 # np.random.seed(1)
@@ -55,8 +64,14 @@ test_loader = torch.utils.data.DataLoader(
 # Create model
 if 'allconv' in args.method_name:
     net = AllConvNet(num_classes)
+    if is_ensemble:
+        net2 = AllConvNet(num_classes)
+        net3 = AllConvNet(num_classes)
 else:
     net = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
+    if is_ensemble:
+        net2 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
+        net3 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
 
 start_epoch = 0
 
@@ -79,13 +94,33 @@ if args.load != '':
     if start_epoch == 0:
         assert False, "could not resume"
 
+if is_ensemble:
+    net.load_state_dict(torch.load(args.ens1))
+    net2.load_state_dict(torch.load(args.ens2))
+    net3.load_state_dict(torch.load(args.ens3))
+    print('Models loaded.')
+
 net.eval()
+if is_ensemble:
+    net2.eval()
+    net3.eval()
+if args.ood_method == 'MC_dropout':
+    net.train()
+    for m in net.modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.eval()
 
 if args.ngpu > 1:
     net = torch.nn.DataParallel(net, device_ids=list(range(args.ngpu)))
+    if is_ensemble:
+        net2 = torch.nn.DataParallel(net2, device_ids=list(range(args.ngpu)))
+        net3 = torch.nn.DataParallel(net3, device_ids=list(range(args.ngpu)))
 
 if args.ngpu > 0:
     net.cuda()
+    if is_ensemble:
+        net2.cuda()
+        net3.cuda()
     # torch.cuda.manual_seed(1)
 
 cudnn.benchmark = True  # fire on all cylinders
@@ -112,15 +147,26 @@ def get_ood_scores(loader, in_dist=False):
             data = data.cuda()
 
             output = net(data)
-            smax = to_np(F.softmax(output, dim=1))
+            if args.ood_method == 'MSP':
+                score = to_np(F.softmax(output, dim=1))
+            elif args.ood_method == 'MLV':
+                score = to_np(output)
+            elif args.ood_method == 'Ensemble':
+                output2 = net2(data)
+                output3 = net3(data)
+                score = to_np(F.softmax(output, dim=1)) + to_np(F.softmax(output2, dim=1)) + to_np(F.softmax(output3, dim=1))
+            elif args.ood_method == 'MC_dropout':
+                for _ in range(args.mc_dropout_iters - 1):
+                    output += net(data)
+                score = to_np(F.softmax(output, dim=1))
 
             if args.use_xent:
                 _score.append(to_np((output.mean(1) - torch.logsumexp(output, dim=1))))
             else:
-                _score.append(-np.max(smax, axis=1))
+                _score.append(-np.max(score, axis=1))
 
             if in_dist:
-                preds = np.argmax(smax, axis=1)
+                preds = np.argmax(score, axis=1)
                 targets = target.numpy().squeeze()
                 right_indices = preds == targets
                 wrong_indices = np.invert(right_indices)
@@ -129,8 +175,8 @@ def get_ood_scores(loader, in_dist=False):
                     _right_score.append(to_np((output.mean(1) - torch.logsumexp(output, dim=1)))[right_indices])
                     _wrong_score.append(to_np((output.mean(1) - torch.logsumexp(output, dim=1)))[wrong_indices])
                 else:
-                    _right_score.append(-np.max(smax[right_indices], axis=1))
-                    _wrong_score.append(-np.max(smax[wrong_indices], axis=1))
+                    _right_score.append(-np.max(score[right_indices], axis=1))
+                    _wrong_score.append(-np.max(score[wrong_indices], axis=1))
     
     if in_dist:
         return concat(_score).copy(), concat(_right_score).copy(), concat(_wrong_score).copy()
