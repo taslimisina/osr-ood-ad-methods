@@ -26,6 +26,9 @@ parser = argparse.ArgumentParser(description='Tunes a CIFAR Classifier with OE',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('dataset', type=str, choices=['cifar10', 'cifar100'],
                     help='Choose between CIFAR-10, CIFAR-100.')
+parser.add_argument('--cifar10', type=str, default='', help='path to CIFAR-10 dataset.')
+parser.add_argument('--cifar100', type=str, default='', help='path to CIFAR-100 dataset.')
+parser.add_argument('--tinynet', type=str, help='path to TinyImageNet .bin file')
 parser.add_argument('--model', '-m', type=str, default='allconv',
                     choices=['allconv', 'wrn'], help='Choose architecture.')
 parser.add_argument('--calibration', '-c', action='store_true',
@@ -66,12 +69,12 @@ train_transform = trn.Compose([trn.RandomHorizontalFlip(), trn.RandomCrop(32, pa
 test_transform = trn.Compose([trn.ToTensor(), trn.Normalize(mean, std)])
 
 if args.dataset == 'cifar10':
-    train_data_in = dset.CIFAR10('/share/data/vision-greg/cifarpy', train=True, transform=train_transform)
-    test_data = dset.CIFAR10('/share/data/vision-greg/cifarpy', train=False, transform=test_transform)
+    train_data_in = dset.CIFAR10(args.cifar10, train=True, transform=train_transform, download=True)
+    test_data = dset.CIFAR10(args.cifar10, train=False, transform=test_transform, download=True)
     num_classes = 10
 else:
-    train_data_in = dset.CIFAR100('/share/data/vision-greg/cifarpy', train=True, transform=train_transform)
-    test_data = dset.CIFAR100('/share/data/vision-greg/cifarpy', train=False, transform=test_transform)
+    train_data_in = dset.CIFAR100(args.cifar100, train=True, transform=train_transform, download=True)
+    test_data = dset.CIFAR100(args.cifar100, train=False, transform=test_transform, download=True)
     num_classes = 100
 
 
@@ -81,7 +84,7 @@ if args.calibration:
     calib_indicator = '_calib'
 
 
-ood_data = TinyImages(transform=trn.Compose(
+ood_data = TinyImages(binfile=args.tinynet, transform=trn.Compose(
     [trn.ToTensor(), trn.ToPILImage(), trn.RandomCrop(32, padding=4),
      trn.RandomHorizontalFlip(), trn.ToTensor(), trn.Normalize(mean, std)]))
 

@@ -23,6 +23,7 @@ parser = argparse.ArgumentParser(description='Trains an MNIST Classifier',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--mnist', type=str, default='', help='path to MNIST dataset.')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=10, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.01, help='The initial learning rate.')
@@ -44,8 +45,8 @@ print(state)
 torch.manual_seed(1)
 np.random.seed(1)
 
-train_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=True, transform=trn.ToTensor())
-test_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=False, transform=trn.ToTensor())
+train_data = dset.MNIST(args.mnist, train=True, transform=trn.ToTensor(), download=True)
+test_data = dset.MNIST(args.mnist, train=False, transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 calib_indicator = ''

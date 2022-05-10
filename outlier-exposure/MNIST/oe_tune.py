@@ -25,6 +25,8 @@ parser = argparse.ArgumentParser(description='Tunes an MNIST Classifier with OE'
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--mnist', type=str, default='', help='path to MNIST dataset.')
+parser.add_argument('--tinynet', type=str, help='path to TinyImageNet .bin file')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=5, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.01, help='The initial learning rate.')
@@ -47,8 +49,8 @@ print(state)
 torch.manual_seed(1)
 np.random.seed(1)
 
-train_data_in = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=True, transform=trn.ToTensor())
-test_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=False, transform=trn.ToTensor())
+train_data_in = dset.MNIST(args.mnist, train=True, transform=trn.ToTensor(), download=True)
+test_data = dset.MNIST(args.mnist, train=False, transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 calib_indicator = ''
@@ -56,7 +58,7 @@ if args.calibration:
     train_data_in, val_data = validation_split(train_data_in, val_share=0.1)
     calib_indicator = 'calib_'
 
-tiny_images = TinyImages(transform=trn.Compose(
+tiny_images = TinyImages(binfile=args.tinynet, transform=trn.Compose(
     [trn.ToTensor(), trn.ToPILImage(), trn.Resize(28),
      trn.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
      trn.RandomHorizontalFlip(), trn.ToTensor()]))

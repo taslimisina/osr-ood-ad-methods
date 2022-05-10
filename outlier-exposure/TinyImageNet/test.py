@@ -36,7 +36,8 @@ parser.add_argument('--method_name', '-m', type=str, default='allconv_baseline',
 parser.add_argument('--layers', default=40, type=int, help='total number of layers')
 parser.add_argument('--widen-factor', default=2, type=int, help='widen factor')
 parser.add_argument('--droprate', default=0.3, type=float, help='dropout probability')
-parser.add_argument('--load', '-l', type=str, default='./snapshots', help='Checkpoint path to resume / test.')
+parser.add_argument('--load', '-l', type=str, default='', help='Checkpoint path to resume / test.')
+parser.add_argument('--start_ep', type=int, default=0, help='Epoch number to start after checkpoint')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=4, help='Pre-fetching threads.')
 parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'MC_dropout'], default='MSP')
@@ -44,6 +45,12 @@ parser.add_argument('--ens1', type=str, default='', help='Checkpoint path (file)
 parser.add_argument('--ens2', type=str, default='', help='Checkpoint path (file) for 2nd model for ensemble.')
 parser.add_argument('--ens3', type=str, default='', help='Checkpoint path (file) for 3rd model for ensemble.')
 parser.add_argument('--mc_dropout_iters', type=int, default=4, help='number of forward pass for each image in Monte Carlo dropout.')
+parser.add_argument('--tinynet', type=str, default='', help='path to TinyImageNet test dataset.')
+parser.add_argument('--tinynet_out_val', type=str, default='', help='path to TinyImageNet held-out ImageNet images.')
+parser.add_argument('--texture', type=str, default='', help='path to texture dataset.')
+parser.add_argument('--places365', type=str, default='', help='path to places365 test dataset.')
+parser.add_argument('--lsun', type=str, default='', help='path to LSUN dataset.')
+parser.add_argument('--svhn', type=str, default='', help='path to SVHN dataset.')
 args = parser.parse_args()
 
 is_ensemble = (args.ood_method == 'Ensemble')
@@ -60,7 +67,7 @@ std = [0.229, 0.224, 0.225]
 test_transform = trn.Compose([trn.ToTensor(), trn.Normalize(mean, std)])
 
 test_data = dset.ImageFolder(
-    root="/share/data/vision-greg/tinyImageNet/tiny-imagenet-200/val",
+    root=args.tinynet,
     transform=test_transform)
 test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.test_bs, shuffle=False,
                                           num_workers=args.prefetch, pin_memory=True)
@@ -78,24 +85,12 @@ else:
         net2 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
         net3 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
 
-start_epoch = 0
+start_epoch = args.start_ep
 
 # Restore model
 if args.load != '':
-    for i in range(1000 - 1, -1, -1):
-        if 'baseline' in args.method_name:
-            subdir = 'baseline'
-        elif 'oe_tune' in args.method_name:
-            subdir = 'oe_tune'
-        else:
-            subdir = 'oe_scratch'
-
-        model_name = os.path.join(os.path.join(args.load, subdir), args.method_name + '_epoch_' + str(i) + '.pt')
-        if os.path.isfile(model_name):
-            net.load_state_dict(torch.load(model_name))
-            print('Model restored! Epoch:', i)
-            start_epoch = i + 1
-            break
+    net.load_state_dict(torch.load(args.load))
+    print('Model restored! Epoch:', start_epoch)
     if start_epoch == 0:
         assert False, "could not resume"
 
@@ -266,57 +261,62 @@ get_and_print_results(ood_loader)
 
 # /////////////// Textures ///////////////
 
-ood_data = dset.ImageFolder(root="/share/data/vision-greg2/users/dan/datasets/dtd/images",
-                            transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
-                                                   trn.ToTensor(), trn.Normalize(mean, std)]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.texture != '':
+    ood_data = dset.ImageFolder(root=args.texture,
+                                transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
+                                                       trn.ToTensor(), trn.Normalize(mean, std)]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nTexture Detection')
-get_and_print_results(ood_loader)
+    print('\n\nTexture Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// SVHN ///////////////
 
-ood_data = svhn.SVHN(root='/share/data/vision-greg/svhn/', split="test",
-                     transform=trn.Compose([trn.Resize(64), trn.ToTensor(), trn.Normalize(mean, std)]), download=False)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.svhn != '':
+    ood_data = svhn.SVHN(root=args.svhn, split="test",
+                         transform=trn.Compose([trn.Resize(64), trn.ToTensor(), trn.Normalize(mean, std)]), download=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nSVHN Detection')
-get_and_print_results(ood_loader)
+    print('\n\nSVHN Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Places365 ///////////////
 
-ood_data = dset.ImageFolder(root="/share/data/vision-greg2/places365/test_subset",
-                            transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
-                                                   trn.ToTensor(), trn.Normalize(mean, std)]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.places365 != '':
+    ood_data = dset.ImageFolder(root=args.places365,
+                                transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
+                                                       trn.ToTensor(), trn.Normalize(mean, std)]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nPlaces365 Detection')
-get_and_print_results(ood_loader)
+    print('\n\nPlaces365 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// LSUN ///////////////
 
-ood_data = lsun_loader.LSUN("/share/data/vision-greg2/users/dan/datasets/LSUN/lsun-master/data", classes='test',
-                            transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
-                                                   trn.ToTensor(), trn.Normalize(mean, std)]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.lsun != '':
+    ood_data = lsun_loader.LSUN(args.lsun, classes='test',
+                                transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
+                                                       trn.ToTensor(), trn.Normalize(mean, std)]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nLSUN Detection')
-get_and_print_results(ood_loader)
+    print('\n\nLSUN Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Held-out ImageNet Classes ///////////////
 
-ood_data = dset.ImageFolder(
-    root="/share/data/vision-greg2/users/dan/datasets/TinyImageNet/out/val", transform=test_transform)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.tinynet_out_val != '':
+    ood_data = dset.ImageFolder(
+        root=args.tinynet_out_val, transform=test_transform)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
 
-print('\n\nHeld-out ImageNet Classes Detection')
-get_and_print_results(ood_loader)
+    print('\n\nHeld-out ImageNet Classes Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Mean Results ///////////////
 
@@ -362,15 +362,15 @@ class AvgOfPair(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.dataset)
 
+if args.tinynet_out_val != '':
+    ood_data = dset.ImageFolder(
+        root=args.tinynet_out_val, transform=test_transform)
+    ood_loader = torch.utils.data.DataLoader(AvgOfPair(ood_data),
+                                             batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-ood_data = dset.ImageFolder(
-    root="/share/data/vision-greg2/users/dan/datasets/TinyImageNet/out/val", transform=test_transform)
-ood_loader = torch.utils.data.DataLoader(AvgOfPair(ood_data),
-                                         batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
-
-print('\n\nArithmetic Mean of Random Image Pair Detection')
-get_and_print_results(ood_loader)
+    print('\n\nArithmetic Mean of Random Image Pair Detection')
+    get_and_print_results(ood_loader)
 
 
 # /////////////// Geometric Mean of Images ///////////////
@@ -393,14 +393,15 @@ class GeomMeanOfPair(torch.utils.data.Dataset):
         return len(self.dataset)
 
 
-ood_data = dset.ImageFolder(
-    root="/share/data/vision-greg2/users/dan/datasets/TinyImageNet/out/val", transform=trn.ToTensor())
-ood_loader = torch.utils.data.DataLoader(
-    GeomMeanOfPair(ood_data), batch_size=args.test_bs, shuffle=True,
-    num_workers=args.prefetch, pin_memory=True)
+if args.tinynet_out_val != '':
+    ood_data = dset.ImageFolder(
+        root=args.tinynet_out_val, transform=trn.ToTensor())
+    ood_loader = torch.utils.data.DataLoader(
+        GeomMeanOfPair(ood_data), batch_size=args.test_bs, shuffle=True,
+        num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nGeometric Mean of Random Image Pair Detection')
-get_and_print_results(ood_loader)
+    print('\n\nGeometric Mean of Random Image Pair Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Jigsaw Images ///////////////
 
