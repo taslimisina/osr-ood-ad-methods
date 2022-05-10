@@ -4,7 +4,7 @@ This is the official repository for the paper [A Unified Survey on Anomaly, Nove
 
 ![OSR_OOD_AD](OSR_OOD_AD.jpg)
 
-In this repo, we aim to implement different methods proposed for Anomaly Detection, Novelty Detection, Out-of-Distribution Detection, and Open-Set Recognition.
+In this repo, we aim to benchmark different methods proposed for Anomaly Detection, Novelty Detection, Out-of-Distribution Detection, and Open-Set Recognition.
 
 A curated list of these methods are available at [here](https://github.com/hoya012/awesome-anomaly-detection) and [here](https://github.com/iCGY96/awesome_OpenSetRecognition_list#open-set-recognition).
 

@@ -28,6 +28,10 @@ parser.add_argument('--model', '-m', type=str, default='allconv',
                     choices=['allconv', 'wrn'], help='Choose architecture.')
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--tinynet_train', type=str, default='', help='path to TinyImageNet train dataset.')
+parser.add_argument('--tinynet_test', type=str, help='path to TinyImageNet test dataset.')
+parser.add_argument('--imagenet_val', type=str, help='path to ImageNet or ImageNet22k validation dataset.')
+parser.add_argument('--imagenet_root', type=str, help='path to ImageNet or ImageNet22k root folder.')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=100, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.1, help='The initial learning rate.')
@@ -64,10 +68,10 @@ train_transform = trn.Compose([trn.RandomHorizontalFlip(), trn.RandomCrop(64, pa
 test_transform = trn.Compose([trn.ToTensor(), trn.Normalize(mean, std)])
 
 train_data_in = dset.ImageFolder(
-    root="/share/data/vision-greg/tinyImageNet/tiny-imagenet-200/train",
+    root=args.tinyset_train,
     transform=train_transform)
 test_data = dset.ImageFolder(
-    root="/share/data/vision-greg/tinyImageNet/tiny-imagenet-200/val",
+    root=args.tinynet_test,
     transform=test_transform)
 
 num_classes = 200
@@ -78,10 +82,10 @@ if args.calibration:
     calib_indicator = 'calib_'
 
 print('Loading ImageNet22k')
-ood_data = dset.ImageFolder(root="/share/data/vision-greg/ImageNet/clsloc/images/val",
+ood_data = dset.ImageFolder(root=args.imagenet_val,
                             transform=trn.Compose([trn.Resize(64), trn.CenterCrop(64),
                                                    trn.ToTensor(), trn.Normalize(mean, std)]))
-ood_data.root = '/share/data/vision-greg/ImageNet22k'
+ood_data.root = args.imagenet_root
 ood_data.class_to_idx = pickle.load(open(ood_data.root + '/class_to_idx.p', "rb"))
 ood_data.classes = pickle.load(open(ood_data.root + '/classes.p', "rb"))
 ood_data.imgs = pickle.load(open(ood_data.root + '/imgs.p', "rb"))

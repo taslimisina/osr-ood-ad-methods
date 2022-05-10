@@ -32,7 +32,7 @@ parser.add_argument('--validate', '-v', action='store_true', help='Evaluate perf
 parser.add_argument('--use_xent', '-x', action='store_true', help='Use cross entropy scoring instead of the MSP.')
 parser.add_argument('--method_name', '-m', type=str, default='baseline', help='Method name.')
 # Loading details
-parser.add_argument('--load', '-l', type=str, default='./snapshots', help='Checkpoint path to resume / test.')
+parser.add_argument('--load', '-l', type=str, default='', help='Checkpoint path to resume / test.')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching threads.')
 parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'Mahalanobis', 'MC_dropout'], default='MSP')
@@ -40,6 +40,12 @@ parser.add_argument('--ens1', type=str, default='', help='Checkpoint path (file)
 parser.add_argument('--ens2', type=str, default='', help='Checkpoint path (file) for 2nd model for ensemble.')
 parser.add_argument('--ens3', type=str, default='', help='Checkpoint path (file) for 3rd model for ensemble.')
 parser.add_argument('--mc_dropout_iters', type=int, default=4, help='number of forward pass for each image in Monte Carlo dropout.')
+parser.add_argument('--mnist', type=str, default='', help='path to MNIST dataset.')
+parser.add_argument('--cifar10', type=str, default='', help='path to CIFAR-10 dataset.')
+parser.add_argument('--icons50', type=str, default='', help='path to Icons-50 dataset.')
+parser.add_argument('--fashion_mnist', type=str, default='', help='path to Fashion-MNIST dataset.')
+parser.add_argument('--not_mnist', type=str, default='', help='path to notMNIST.pickle file.')
+parser.add_argument('--omniglot', type=str, default='', help='path to omniglot.mat file.')
 args = parser.parse_args()
 
 is_ensemble = (args.ood_method == 'Ensemble')
@@ -49,7 +55,7 @@ if is_ensemble:
 # torch.manual_seed(1)
 # np.random.seed(1)
 
-test_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=False, transform=trn.ToTensor())
+test_data = dset.MNIST(args.mnist, train=False, transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 test_loader = torch.utils.data.DataLoader(
@@ -62,26 +68,10 @@ if is_ensemble:
     net2 = ConvNet()
     net3 = ConvNet()
 
-start_epoch = 0
-
 # Restore model
 if args.load != '':
-    for i in range(300 - 1, -1, -1):
-        if 'baseline' in args.method_name:
-            subdir = 'baseline'
-        elif 'oe_tune' in args.method_name:
-            subdir = 'oe_tune'
-        else:
-            subdir = 'oe_scratch'
-
-        model_name = os.path.join(os.path.join(args.load, subdir), args.method_name + '_epoch_' + str(i) + '.pt')
-        if os.path.isfile(model_name):
-            net.load_state_dict(torch.load(model_name))
-            print('Model restored! Epoch:', i)
-            start_epoch = i + 1
-            break
-    if start_epoch == 0:
-        assert False, "could not resume"
+    net.load_state_dict(torch.load(args.load))
+    print('Model restored!')
 
 if is_ensemble:
     net.load_state_dict(torch.load(args.ens1))
@@ -235,95 +225,98 @@ get_and_print_results(ood_loader)
 
 # /////////////// CIFAR data ///////////////
 
-ood_data = dset.CIFAR10(
-    '/share/data/vision-greg/cifarpy', train=False,
-    transform=trn.Compose([trn.Resize(28),
-                           trn.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
-                           trn.ToTensor()]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
-
-print('\n\nCIFAR-10 Detection')
-get_and_print_results(ood_loader)
+if args.cifar10 != '':
+    ood_data = dset.CIFAR10(
+        args.cifar10, train=False,
+        transform=trn.Compose([trn.Resize(28),
+                               trn.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
+                               trn.ToTensor()]), download=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
+    print('\n\nCIFAR-10 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Icons-50 ///////////////
 
-ood_data = dset.ImageFolder('/share/data/vision-greg/DistortedImageNet/Icons-50',
-                            transform=trn.Compose([trn.Resize((28, 28)),
-                                                   trn.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
-                                                   trn.ToTensor()]))
+if args.icons50 != '':
+    ood_data = dset.ImageFolder(args.icons50,
+                                transform=trn.Compose([trn.Resize((28, 28)),
+                                                       trn.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
+                                                       trn.ToTensor()]))
 
-filtered_imgs = []
-for img in ood_data.imgs:
-    if 'numbers' not in img[0]:     # img[0] is image name
-        filtered_imgs.append(img)
-ood_data.imgs = filtered_imgs
+    filtered_imgs = []
+    for img in ood_data.imgs:
+        if 'numbers' not in img[0]:     # img[0] is image name
+            filtered_imgs.append(img)
+    ood_data.imgs = filtered_imgs
 
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
-print('\n\nIcons-50 Detection')
-get_and_print_results(ood_loader)
+    print('\n\nIcons-50 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Fashion-MNIST ///////////////
 
-ood_data = dset.FashionMNIST('/share/data/vision-greg/fashion_mnist', train=False,
-                             transform=trn.ToTensor(), download=False)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
+if args.fashion_mnist != '':
+    ood_data = dset.FashionMNIST(args.fashion_mnist, train=False,
+                                 transform=trn.ToTensor(), download=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
-print('\n\nFashion-MNIST Detection')
-get_and_print_results(ood_loader)
+    print('\n\nFashion-MNIST Detection')
+    get_and_print_results(ood_loader)
 
-# /////////////// Negative MNIST ///////////////
+    # /////////////// Negative MNIST ///////////////
 
-ood_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=False,
-                      transform=trn.Compose([trn.ToTensor(), trn.Lambda(lambda img: 1 - img)]))
+    ood_data = dset.MNIST('/home-nfs/dan/cifar_data/mnist', train=False,
+                          transform=trn.Compose([trn.ToTensor(), trn.Lambda(lambda img: 1 - img)]))
 
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
-print('\n\nNegative MNIST Detection')
-get_and_print_results(ood_loader)
+    print('\n\nNegative MNIST Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// notMNIST ///////////////
+if args.not_mnist != '':
+    pickle_file = args.not_mnist
+    with open(pickle_file, 'rb') as f:
+        notMNIST_data = pickle.load(f, encoding='latin1')
+        notMNIST_data = notMNIST_data['test_dataset'].reshape((-1, 28 * 28)) + 0.5
 
-pickle_file = '/share/data/vision-greg2/users/dan/datasets/notMNIST.pickle'
-with open(pickle_file, 'rb') as f:
-    notMNIST_data = pickle.load(f, encoding='latin1')
-    notMNIST_data = notMNIST_data['test_dataset'].reshape((-1, 28 * 28)) + 0.5
+    dummy_targets = torch.ones(min(ood_num_examples*args.num_to_avg, notMNIST_data.shape[0]))
+    ood_data = torch.utils.data.TensorDataset(torch.from_numpy(
+        notMNIST_data[:ood_num_examples*args.num_to_avg].astype(np.float32)), dummy_targets)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
-dummy_targets = torch.ones(min(ood_num_examples*args.num_to_avg, notMNIST_data.shape[0]))
-ood_data = torch.utils.data.TensorDataset(torch.from_numpy(
-    notMNIST_data[:ood_num_examples*args.num_to_avg].astype(np.float32)), dummy_targets)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
-
-print('\n\nnotMNIST Detection')
-get_and_print_results(ood_loader)
+    print('\n\nnotMNIST Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Omniglot ///////////////
 
 import scipy.io as sio
 import scipy.misc as scimisc
 
-# other alphabets have characters which look like digits
-safe_list = [0, 2, 5, 6, 8, 12, 13, 14, 15, 16, 17, 18, 19, 21, 26]
-m = sio.loadmat("/share/data/vision-greg2/users/dan/datasets/omniglot.mat")
+if args.onmniglot != '':
+    # other alphabets have characters which look like digits
+    safe_list = [0, 2, 5, 6, 8, 12, 13, 14, 15, 16, 17, 18, 19, 21, 26]
+    m = sio.loadmat(args.omniglot)
 
-squished_set = []
-for safe_number in safe_list:
-    for alphabet in m['images'][safe_number]:
-        for letters in alphabet:
-            for letter in letters:
-                for example in letter:
-                    squished_set.append(scimisc.imresize(1 - example[0], (28, 28)).reshape(1, 28 * 28))
+    squished_set = []
+    for safe_number in safe_list:
+        for alphabet in m['images'][safe_number]:
+            for letters in alphabet:
+                for letter in letters:
+                    for example in letter:
+                        squished_set.append(scimisc.imresize(1 - example[0], (28, 28)).reshape(1, 28 * 28))
 
-omni_images = np.concatenate(squished_set, axis=0)
+    omni_images = np.concatenate(squished_set, axis=0)
 
-dummy_targets = torch.ones(min(ood_num_examples*args.num_to_avg, len(omni_images)))
-ood_data = torch.utils.data.TensorDataset(torch.from_numpy(
-    omni_images[:ood_num_examples*args.num_to_avg].astype(np.float32)), dummy_targets)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
+    dummy_targets = torch.ones(min(ood_num_examples*args.num_to_avg, len(omni_images)))
+    ood_data = torch.utils.data.TensorDataset(torch.from_numpy(
+        omni_images[:ood_num_examples*args.num_to_avg].astype(np.float32)), dummy_targets)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
-print('\n\nOmniglot Detection')
-get_and_print_results(ood_loader)
+    print('\n\nOmniglot Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Mean Results ///////////////
 

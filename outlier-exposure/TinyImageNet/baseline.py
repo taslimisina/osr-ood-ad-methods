@@ -27,6 +27,8 @@ parser.add_argument('--model', '-m', type=str, default='allconv',
                     choices=['allconv', 'wrn'], help='Choose architecture.')
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--tinynet_train', type=str, default='', help='path to TinyImageNet train dataset.')
+parser.add_argument('--tinynet_test', type=str, default='', help='path to TinyImageNet test dataset.')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=100, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.1, help='The initial learning rate.')
@@ -62,10 +64,10 @@ train_transform = trn.Compose([trn.RandomHorizontalFlip(), trn.RandomCrop(64, pa
 test_transform = trn.Compose([trn.ToTensor(), trn.Normalize(mean, std)])
 
 train_data = dset.ImageFolder(
-    root="/share/data/vision-greg/tinyImageNet/tiny-imagenet-200/train",
+    root=args.tinynet_train,
     transform=train_transform)
 test_data = dset.ImageFolder(
-    root="/share/data/vision-greg/tinyImageNet/tiny-imagenet-200/val",
+    root=args.tinynet_test,
     transform=test_transform)
 
 num_classes = 200

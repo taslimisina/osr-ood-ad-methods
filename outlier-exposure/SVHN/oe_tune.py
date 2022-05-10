@@ -28,6 +28,8 @@ parser.add_argument('--model', '-m', type=str, default='allconv',
                     choices=['allconv', 'wrn'], help='Choose architecture.')
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--svhn', type=str, default='', help='path to SVHN dataset.')
+parser.add_argument('--tinynet', type=str, help='path to TinyImageNet .bin file')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=5, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.0001, help='The initial learning rate.')    # TODO
@@ -56,10 +58,10 @@ torch.manual_seed(1)
 np.random.seed(1)
 
 
-train_data_in = svhn.SVHN('/share/data/vision-greg/svhn/', split='train_and_extra',
-                          transform=trn.ToTensor(), download=False)
-test_data = svhn.SVHN('/share/data/vision-greg/svhn/', split='test',
-                      transform=trn.ToTensor(), download=False)
+train_data_in = svhn.SVHN(args.svhn, split='train_and_extra',
+                          transform=trn.ToTensor(), download=True)
+test_data = svhn.SVHN(args.svhn, split='test',
+                      transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 calib_indicator = ''
@@ -67,7 +69,7 @@ if args.calibration:
     train_data_in, val_data = validation_split(train_data_in, val_share=5000/604388.)
     calib_indicator = 'calib_'
 
-tiny_images = TinyImages(transform=trn.Compose(
+tiny_images = TinyImages(binfile=args.tinynet, transform=trn.Compose(
     [trn.ToTensor(), trn.ToPILImage(),
      trn.RandomHorizontalFlip(), trn.ToTensor()]))
 

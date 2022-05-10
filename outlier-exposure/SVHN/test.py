@@ -36,7 +36,7 @@ parser.add_argument('--method_name', '-m', type=str, default='allconv_baseline',
 parser.add_argument('--layers', default=16, type=int, help='total number of layers')
 parser.add_argument('--widen-factor', default=4, type=int, help='widen factor')
 parser.add_argument('--droprate', default=0.4, type=float, help='dropout probability')
-parser.add_argument('--load', '-l', type=str, default='./snapshots', help='Checkpoint path to resume / test.')
+parser.add_argument('--load', '-l', type=str, default='', help='Checkpoint path to resume / test.')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching threads.')
 parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'MC_dropout'], default='MSP')
@@ -44,6 +44,13 @@ parser.add_argument('--ens1', type=str, default='', help='Checkpoint path (file)
 parser.add_argument('--ens2', type=str, default='', help='Checkpoint path (file) for 2nd model for ensemble.')
 parser.add_argument('--ens3', type=str, default='', help='Checkpoint path (file) for 3rd model for ensemble.')
 parser.add_argument('--mc_dropout_iters', type=int, default=4, help='number of forward pass for each image in Monte Carlo dropout.')
+parser.add_argument('--svhn', type=str, default='', help='path to SVHN dataset.')
+parser.add_argument('--cifar10', type=str, default='', help='path to CIFAR-10 dataset.')
+parser.add_argument('--icons50', type=str, default='', help='path to Icons-50 dataset.')
+parser.add_argument('--texture', type=str, default='', help='path to texture dataset.')
+parser.add_argument('--places365', type=str, default='', help='path to places365 test dataset.')
+parser.add_argument('--lsun', type=str, default='', help='path to LSUN dataset.')
+parser.add_argument('--street', type=str, default='', help='path to Street View Characters dataset.')
 args = parser.parse_args()
 
 is_ensemble = (args.ood_method == 'Ensemble')
@@ -53,8 +60,8 @@ if is_ensemble:
 # torch.manual_seed(1)
 # np.random.seed(1)
 
-test_data = svhn.SVHN('/share/data/vision-greg/svhn/', split='test',
-                      transform=trn.ToTensor(), download=False)
+test_data = svhn.SVHN(args.svhn, split='test',
+                      transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 test_loader = torch.utils.data.DataLoader(
@@ -73,26 +80,10 @@ else:
         net2 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
         net3 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
 
-start_epoch = 0
-
 # Restore model
 if args.load != '':
-    for i in range(300 - 1, -1, -1):
-        if 'baseline' in args.method_name:
-            subdir = 'baseline'
-        elif 'oe_tune' in args.method_name:
-            subdir = 'oe_tune'
-        else:
-            subdir = 'oe_scratch'
-
-        model_name = os.path.join(os.path.join(args.load, subdir), args.method_name + '_epoch_' + str(i) + '.pt')
-        if os.path.isfile(model_name):
-            net.load_state_dict(torch.load(model_name))
-            print('Model restored! Epoch:', i)
-            start_epoch = i + 1
-            break
-    if start_epoch == 0:
-        assert False, "could not resume"
+    net.load_state_dict(torch.load(args.load))
+    print('Model restored!')
 
 if is_ensemble:
     net.load_state_dict(torch.load(args.ens1))
@@ -262,69 +253,75 @@ get_and_print_results(ood_loader)
 
 # /////////////// Icons-50 ///////////////
 
-ood_data = dset.ImageFolder('/share/data/vision-greg/DistortedImageNet/Icons-50',
-                            transform=trn.Compose([trn.Resize((32, 32)), trn.ToTensor()]))
+if args.icons50 != '':
+    ood_data = dset.ImageFolder(args.icons50,
+                                transform=trn.Compose([trn.Resize((32, 32)), trn.ToTensor()]))
 
-filtered_imgs = []
-for img in ood_data.imgs:
-    if 'numbers' not in img[0]:     # img[0] is image name
-        filtered_imgs.append(img)
-ood_data.imgs = filtered_imgs
+    filtered_imgs = []
+    for img in ood_data.imgs:
+        if 'numbers' not in img[0]:     # img[0] is image name
+            filtered_imgs.append(img)
+    ood_data.imgs = filtered_imgs
 
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True)
 
 
-print('\n\nIcons-50 Detection')
-get_and_print_results(ood_loader)
+    print('\n\nIcons-50 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Textures ///////////////
 
-ood_data = dset.ImageFolder(root="/share/data/vision-greg2/users/dan/datasets/dtd/images",
-                            transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.texture != '':
+    ood_data = dset.ImageFolder(root=args.texture,
+                                transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nTexture Detection')
-get_and_print_results(ood_loader)
+    print('\n\nTexture Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Places365 ///////////////
 
-ood_data = dset.ImageFolder(root="/share/data/vision-greg2/places365/test_subset",
-                            transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.places365 != '':
+    ood_data = dset.ImageFolder(root=args.places365,
+                                transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nPlaces365 Detection')
-get_and_print_results(ood_loader)
+    print('\n\nPlaces365 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// LSUN ///////////////
 
-ood_data = lsun_loader.LSUN("/share/data/vision-greg2/users/dan/datasets/LSUN/lsun-master/data", classes='test',
-                            transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.lsun != '':
+    ood_data = lsun_loader.LSUN(args.lsun, classes='test',
+                                transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nLSUN Detection')
-get_and_print_results(ood_loader)
+    print('\n\nLSUN Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// CIFAR data ///////////////
 
-ood_data = dset.CIFAR10('/share/data/vision-greg/cifarpy', train=False, transform=trn.ToTensor(), download=False)
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.cifar10 != '':
+    ood_data = dset.CIFAR10(args.cifar10, train=False, transform=trn.ToTensor(), download=True)
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nCIFAR-10 Detection')
-get_and_print_results(ood_loader)
+    print('\n\nCIFAR-10 Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Street View Characters data ///////////////
 
-ood_data = dset.ImageFolder(root="/share/data/vision-greg2/users/dan/datasets/StreetLetters",
-                            transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
-ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
-                                         num_workers=args.prefetch, pin_memory=True)
+if args.street != '':
+    ood_data = dset.ImageFolder(root=args.street,
+                                transform=trn.Compose([trn.Resize(32), trn.CenterCrop(32), trn.ToTensor()]))
+    ood_loader = torch.utils.data.DataLoader(ood_data, batch_size=args.test_bs, shuffle=True,
+                                             num_workers=args.prefetch, pin_memory=True)
 
-print('\n\nStreet View Characters Detection')
-get_and_print_results(ood_loader)
+    print('\n\nStreet View Characters Detection')
+    get_and_print_results(ood_loader)
 
 # /////////////// Mean Results ///////////////
 

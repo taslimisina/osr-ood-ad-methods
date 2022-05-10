@@ -27,6 +27,7 @@ parser.add_argument('--model', '-m', type=str, default='allconv',
                     choices=['allconv', 'wrn'], help='Choose architecture.')
 parser.add_argument('--calibration', '-c', action='store_true',
                     help='Train a model to be used for calibration. This holds out some data for validation.')
+parser.add_argument('--svhn', type=str, default='', help='path to SVHN dataset.')
 # Optimization options
 parser.add_argument('--epochs', '-e', type=int, default=20, help='Number of epochs to train.')
 parser.add_argument('--learning_rate', '-lr', type=float, default=0.01, help='The initial learning rate.')
@@ -53,10 +54,10 @@ print(state)
 torch.manual_seed(1)
 np.random.seed(1)
 
-train_data = svhn.SVHN('/share/data/vision-greg/svhn/', split='train_and_extra',
-                       transform=trn.ToTensor(), download=False)
-test_data = svhn.SVHN('/share/data/vision-greg/svhn/', split='test',
-                      transform=trn.ToTensor(), download=False)
+train_data = svhn.SVHN(args.svhn, split='train_and_extra',
+                       transform=trn.ToTensor(), download=True)
+test_data = svhn.SVHN(args.svhn, split='test',
+                      transform=trn.ToTensor(), download=True)
 num_classes = 10
 
 calib_indicator = ''
