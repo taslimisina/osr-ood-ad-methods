@@ -5,7 +5,7 @@ The codes are adapted from [the official repo for Outlier Exposure](https://gith
 In this section, you can train a classifier, fine-tune with outlier exposure, train a model along with outlier exposure,
 or evaluate a trained model for Out-of-Distribution detection. 
 
-##how to run
+## how to run
 
 For each inlier dataset, run the code in the corresponding folder. Below are examples for CIFAR-10. Other datasets are similar.
 
