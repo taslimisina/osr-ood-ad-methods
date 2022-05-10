@@ -37,7 +37,6 @@ parser.add_argument('--layers', default=16, type=int, help='total number of laye
 parser.add_argument('--widen-factor', default=4, type=int, help='widen factor')
 parser.add_argument('--droprate', default=0.4, type=float, help='dropout probability')
 parser.add_argument('--load', '-l', type=str, default='', help='Checkpoint path to resume / test.')
-parser.add_argument('--start_ep', type=int, default=0, help='Epoch number to start after checkpoint')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching threads.')
 parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'MC_dropout'], default='MSP')
@@ -81,14 +80,10 @@ else:
         net2 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
         net3 = WideResNet(args.layers, num_classes, args.widen_factor, dropRate=args.droprate)
 
-start_epoch = args.start_ep
-
 # Restore model
 if args.load != '':
     net.load_state_dict(torch.load(args.load))
-    print('Model restored! Epoch:', start_epoch)
-    if start_epoch == 0:
-        assert False, "could not resume"
+    print('Model restored!')
 
 if is_ensemble:
     net.load_state_dict(torch.load(args.ens1))

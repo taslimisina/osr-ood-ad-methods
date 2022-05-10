@@ -33,7 +33,6 @@ parser.add_argument('--use_xent', '-x', action='store_true', help='Use cross ent
 parser.add_argument('--method_name', '-m', type=str, default='baseline', help='Method name.')
 # Loading details
 parser.add_argument('--load', '-l', type=str, default='', help='Checkpoint path to resume / test.')
-parser.add_argument('--start_ep', type=int, default=0, help='Epoch number to start after checkpoint')
 parser.add_argument('--ngpu', type=int, default=1, help='0 = CPU.')
 parser.add_argument('--prefetch', type=int, default=2, help='Pre-fetching threads.')
 parser.add_argument('--ood_method', type=str, choices=['MSP', 'MLV', 'Ensemble', 'Mahalanobis', 'MC_dropout'], default='MSP')
@@ -69,14 +68,10 @@ if is_ensemble:
     net2 = ConvNet()
     net3 = ConvNet()
 
-start_epoch = args.start_ep
-
 # Restore model
 if args.load != '':
     net.load_state_dict(torch.load(args.load))
-    print('Model restored! Epoch:', start_epoch)
-    if start_epoch == 0:
-        assert False, "could not resume"
+    print('Model restored!')
 
 if is_ensemble:
     net.load_state_dict(torch.load(args.ens1))
