@@ -28,7 +28,7 @@ class Evaluator:
             inlier_testset, self.batch_size, self.shuffle, self.num_workers, self.pin_memory)
         outlier_testset = self.outlier_dataset.get_testset(self.ood_method.get_transform())
         outlier_testloader = self.outlier_dataset.get_testloader(
-            inlier_testset, self.batch_size, self.shuffle, self.num_workers, self.pin_memory)
+            outlier_testset, self.batch_size, self.shuffle, self.num_workers, self.pin_memory)
 
         model.eval()
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
