@@ -5,7 +5,6 @@ from ood.ood_methods.ood_method import OodMethod
 from ood.scorers.msp_scorer import MspScorer
 import torch
 import requests
-from tqdm import tqdm
 
 
 class Msp(OodMethod):
@@ -14,11 +13,10 @@ class Msp(OodMethod):
         super().__init__(WideResNet(depth=40, num_classes=10), MspScorer())
         ckpt_url = 'https://github.com/hendrycks/outlier-exposure/raw/master/CIFAR/snapshots' \
                    '/baseline/cifar10_calib_wrn_baseline_epoch_99.pt'
-        response = requests.get(ckpt_url, stream=True)
+        response = requests.get(ckpt_url)
         file = 'cifar10_wrn_baseline_epoch_99.pt'
         with open(file, 'wb') as handle:
-            for data in tqdm(response.iter_content()):
-                handle.write(data)
+            handle.write(response.content)
         self.arch.load_state_dict(torch.load(file))
 
     def get_transform(self):
