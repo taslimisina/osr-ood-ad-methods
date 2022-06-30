@@ -10,7 +10,7 @@ import requests
 class Msp(OodMethod):
 
     def __init__(self):
-        super().__init__(WideResNet(depth=40, num_classes=10), MspScorer())
+        super().__init__(WideResNet(depth=40, num_classes=10, widen_factor=2, dropRate=0.3), MspScorer())
         ckpt_url = 'https://github.com/hendrycks/outlier-exposure/raw/master/CIFAR/snapshots' \
                    '/baseline/cifar10_calib_wrn_baseline_epoch_99.pt'
         response = requests.get(ckpt_url)
