@@ -20,6 +20,7 @@ class Evaluator:
         self.num_workers = num_workers
         self.pin_memory = pin_memory
 
+    @torch.no_grad()
     def evaluate(self):
         model = self.ood_method.get_trained_arch()
         inlier_testset = self.inlier_dataset.get_testset(self.ood_method.get_transform())
