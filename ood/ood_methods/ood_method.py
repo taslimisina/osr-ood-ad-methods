@@ -7,8 +7,8 @@ class OodMethod:
         self.arch = arch
         self.scorer = scorer
 
-    def get_arch(self):
-        return self.arch
+    def get_trained_arch(self):
+        raise NotImplementedError
 
     def get_scorer(self):
         return self.scorer

@@ -21,7 +21,7 @@ class Evaluator:
         self.pin_memory = pin_memory
 
     def evaluate(self):
-        model = self.ood_method.get_arch()
+        model = self.ood_method.get_trained_arch()
         inlier_testset = self.inlier_dataset.get_testset(self.ood_method.get_transform())
         inlier_testloader = self.inlier_dataset.get_testloader(
             inlier_testset, self.batch_size, self.shuffle, self.num_workers, self.pin_memory)
