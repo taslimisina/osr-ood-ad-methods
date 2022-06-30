@@ -12,8 +12,8 @@ class Msp(OodMethod):
 
     def __init__(self):
         super().__init__(WideResNet(depth=40, num_classes=10), MspScorer())
-        ckpt_url = 'https://github.com/hendrycks/outlier-exposure/blob/master/CIFAR/snapshots' \
-                        '/baseline/cifar10_wrn_baseline_epoch_99.pt'
+        ckpt_url = 'https://github.com/hendrycks/outlier-exposure/raw/master/CIFAR/snapshots' \
+                   '/baseline/cifar10_calib_wrn_baseline_epoch_99.pt'
         response = requests.get(ckpt_url, stream=True)
         file = 'cifar10_wrn_baseline_epoch_99.pt'
         with open(file, 'wb') as handle:
