@@ -10,6 +10,9 @@ class AdMethod:
     def get_trained_arch(self):
         raise NotImplementedError
 
+    def get_normal_class(self) -> int:
+        raise NotImplementedError
+
     def get_scorer(self):
         return self.scorer
 
