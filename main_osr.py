@@ -3,9 +3,8 @@ from osr.evaluator import Evaluator
 benchmarks = []
 
 def main():
-    for i, benchmark in enumerate(benchmarks):
-        print('Benchmark', i, ':', benchmark)
-        evaluator = Evaluator(**benchmark)
+    for i, evaluator in enumerate(benchmarks):
+        print('Benchmark', i, ':', evaluator)
         evaluator.evaluate()
 
 

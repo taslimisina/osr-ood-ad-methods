@@ -8,15 +8,11 @@ from ood.ood_methods.msp import Msp
 
 
 benchmarks = []
-benchmarks.append({'ood_method': Msp(),
-                   'inlier_dataset': Cifar10Dataset(),
-                   'outlier_dataset': Cifar100Dataset(),
-                   'criteria': [Auroc(), Aupr(), Fpr()]})
+benchmarks.append(Evaluator(Msp(), Cifar10Dataset(), Cifar100Dataset(), [Auroc(), Aupr(), Fpr()]))
 
 def main():
-    for i, benchmark in enumerate(benchmarks):
-        print('Benchmark', i, ':', benchmark)
-        evaluator = Evaluator(**benchmark)
+    for i, evaluator in enumerate(benchmarks):
+        print('Benchmark', i, ':', evaluator)
         evaluator.evaluate()
 
 

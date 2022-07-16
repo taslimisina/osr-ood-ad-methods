@@ -56,3 +56,9 @@ class Evaluator:
             eval_score = critic.evaluate(closed_scores, open_scores)
             print(critic.get_name(), eval_score)
 
+    def __str__(self):
+        return 'osr_method: ' + str(self.osr_method) + '\t' + \
+            'dataset: ' + self.dataset.get_name() + '\t' + \
+            'closed_set: ' + str(self.osr_method.get_closed_set()) + '\t' + \
+            'criteria: ' + str(self.criteria) + '\t' + \
+            'batch_size: ' + str(self.batch_size)

@@ -48,3 +48,10 @@ class Evaluator:
 
         for critic in self.criteria:
             print(critic.get_name(), critic.evaluate(inlier_scores, outlier_scores))
+
+    def __str__(self):
+        return 'ood_method: ' + str(self.ood_method) + '\t' + \
+            'inlier_dataset: ' + self.inlier_dataset.get_name() + '\t' + \
+            'outlier_dataset: ' + self.outlier_dataset.get_name() + '\t' + \
+            'criteria: ' + str(self.criteria) + '\t' + \
+            'batch_size: ' + str(self.batch_size)

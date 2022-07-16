@@ -56,3 +56,9 @@ class Evaluator:
             eval_score = critic.evaluate(normal_scores, anomaly_scores)
             print(critic.get_name(), eval_score)
 
+    def __str__(self):
+        return 'ad_method: ' + str(self.ad_method) + '\t' + \
+            'dataset: ' + self.dataset.get_name() + '\t' + \
+            'normal_class: ' + str(self.ad_method.get_normal_class()) + '\t' + \
+            'criteria: ' + str(self.criteria) + '\t' + \
+            'batch_size: ' + str(self.batch_size)
