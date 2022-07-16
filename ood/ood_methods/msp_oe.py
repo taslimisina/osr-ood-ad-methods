@@ -1,3 +1,5 @@
+import os
+
 from torchvision.transforms import transforms
 
 from ood.archs.wrn import WideResNet
@@ -34,6 +36,7 @@ class MspOE(OodMethod):
             return
         ckpt_url = ckpt_urls[dataset]
         response = requests.get(ckpt_url)
+        os.makedirs('./checkpoints/', exist_ok=True)
         file = './checkpoints/' + ckpt_url.split('/')[-1]
         with open(file, 'wb') as handle:
             handle.write(response.content)
