@@ -1,6 +1,7 @@
 from torchvision.transforms import transforms
 
 from ood.archs.wrn import WideResNet
+from ood.datasets.dataset import Dataset
 from ood.ood_methods.ood_method import OodMethod
 from ood.scorers.msp_scorer import MspScorer
 import torch
@@ -16,8 +17,9 @@ ckpt_urls = {
 
 class Msp(OodMethod):
 
-    def __init__(self):
-        super().__init__(WideResNet(depth=40, num_classes=10, widen_factor=2, dropRate=0.3), MspScorer())
+    def __init__(self, dataset: Dataset):
+        super().__init__(WideResNet(depth=40, num_classes=dataset.get_num_classes(), widen_factor=2, dropRate=0.3),
+                         MspScorer(), dataset)
 
     def get_transform(self):
         mean = [x / 255 for x in [125.3, 123.0, 113.9]]
@@ -25,7 +27,8 @@ class Msp(OodMethod):
         test_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
         return test_transform
 
-    def get_trained_arch(self, dataset):
+    def get_trained_arch(self):
+        dataset = self.dataset.get_name()
         if dataset not in ckpt_urls.keys():
             print(dataset, 'dataset is not available!')
             return

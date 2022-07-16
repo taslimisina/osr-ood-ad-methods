@@ -1,13 +1,15 @@
 from ad.archs.arch import Arch
+from ad.datasets.dataset import Dataset
 from ad.scorers.scorer import Scorer
 
 
 class AdMethod:
-    def __init__(self, arch: Arch, scorer: Scorer):
+    def __init__(self, arch: Arch, scorer: Scorer, dataset: Dataset):
         self.arch = arch
         self.scorer = scorer
+        self.dataset = dataset
 
-    def get_trained_arch(self, dataset: str):
+    def get_trained_arch(self):
         raise NotImplementedError
 
     def get_normal_class(self) -> int:

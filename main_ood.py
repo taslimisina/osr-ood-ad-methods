@@ -15,13 +15,13 @@ criteria = [Auroc(), Aupr(), Fpr()]
 benchmarks = []
 # Cifar10
 benchmarks.extend([
-    Evaluator(Msp(), cifar10, cifar100, criteria),
-    Evaluator(MspOE(), cifar10, cifar100, criteria)
+    Evaluator(Msp(cifar10), cifar10, cifar100, criteria),
+    Evaluator(MspOE(cifar10), cifar10, cifar100, criteria)
 ])
 # Cifar100
 benchmarks.extend([
-    Evaluator(Msp(), cifar100, cifar10, criteria),
-    Evaluator(MspOE(), cifar100, cifar10, criteria)
+    Evaluator(Msp(cifar100), cifar100, cifar10, criteria),
+    Evaluator(MspOE(cifar100), cifar100, cifar10, criteria)
 ])
 
 def main():

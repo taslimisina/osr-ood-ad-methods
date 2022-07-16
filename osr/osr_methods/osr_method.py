@@ -1,15 +1,17 @@
 from typing import List
 
 from osr.archs.arch import Arch
+from osr.datasets.dataset import Dataset
 from osr.scorers.scorer import Scorer
 
 
 class OsrMethod:
-    def __init__(self, arch: Arch, scorer: Scorer):
+    def __init__(self, arch: Arch, scorer: Scorer, dataset: Dataset):
         self.arch = arch
         self.scorer = scorer
+        self.dataset = dataset
 
-    def get_trained_arch(self, dataset: str):
+    def get_trained_arch(self):
         raise NotImplementedError
 
     def get_closed_set(self) -> List[int]:
