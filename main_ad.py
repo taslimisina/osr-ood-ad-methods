@@ -1,11 +1,14 @@
 from ad.evaluator import Evaluator
+import torch.backends.cudnn as cudnn
+
+cudnn.benchmark = True
 
 benchmarks = []
 
 def main():
-    for i, benchmark in enumerate(benchmarks):
-        print('Benchmark', i, ':', benchmark)
-        evaluator = Evaluator(**benchmark)
+    for i, evaluator in enumerate(benchmarks):
+        print('\nBenchmark', i, ':')
+        print(evaluator)
         evaluator.evaluate()
 
 

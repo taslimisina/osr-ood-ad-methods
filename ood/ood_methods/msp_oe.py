@@ -12,12 +12,12 @@ import requests
 
 ckpt_urls = {
     'Cifar10': 'https://github.com/hendrycks/outlier-exposure/raw/master/CIFAR/snapshots'
-               '/baseline/cifar10_calib_wrn_baseline_epoch_99.pt',
+               '/oe_scratch/cifar10_calib_wrn_oe_scratch_epoch_99.pt',
     'Cifar100': 'https://github.com/hendrycks/outlier-exposure/raw/master/CIFAR/snapshots'
-                '/baseline/cifar100_calib_wrn_baseline_epoch_99.pt'
+                '/oe_scratch/cifar100_calib_wrn_oe_scratch_epoch_99.pt'
 }
 
-class Msp(OodMethod):
+class MspOE(OodMethod):
 
     def __init__(self, dataset: Dataset):
         super().__init__(WideResNet(depth=40, num_classes=dataset.get_num_classes(), widen_factor=2, dropRate=0.3),
@@ -45,4 +45,4 @@ class Msp(OodMethod):
         return self.arch
 
     def __str__(self):
-        return 'MSP'
+        return 'MSP-OE'
