@@ -7,7 +7,7 @@ benchmarks = []
 
 def main():
     for i, evaluator in enumerate(benchmarks):
-        print('Benchmark', i, ':', evaluator)
+        print('\nBenchmark', i, ':', evaluator)
         evaluator.evaluate()
 
 
