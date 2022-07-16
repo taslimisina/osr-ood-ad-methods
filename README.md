@@ -11,10 +11,10 @@ A curated list of these methods are available at [here](https://github.com/hoya0
 
 ## Running the code
 To benchmark *OOD*, *OSR* or *AD/ND* methods, run *main_ood.py*, *main_osr.py* or *main_ad.py* respectively.
-For a customized run, you can modify these files to comment/uncomment the pre-defined benchmarks or to create a custom benchmark of your own.
+You can modify these files to comment the benchmarks which you don't wish to run or to create a custom benchmark.
 
-Currently there are few settings to run but we aim to add other methods and benchmarks in time. We also welcome you to add your methods and pre-trained models and create pull requests.
-For contribution please see [Code Structure and Contribution](#code-structure-and-contribution).
+The repo is under construction and more methods and benchmarks will be added soon. We sincerely welcome you to add your methods and pre-trained models and create pull requests.
+For contribution please refer to [Code Structure and Contribution](#code-structure-and-contribution).
 
 
 ## Datasets
@@ -81,17 +81,17 @@ ood
     |   scorer.py
 ```
 
-archs: model architectures e.g. WideResNet model
+archs: model architectures, e.g. WideResNet model
 
-criteria: evaluation criteria e.g. AUROC
+criteria: evaluation criteria, e.g. AUROC
 
-datasets: datasets used for inlier and outlier data e.g. CIFAR10/100
+datasets: datasets used for inlier and outlier data, e.g. CIFAR10/100
 
-ood_methods: OOD methods e.g. MSP
+ood_methods: OOD methods, e.g. MSP
 
-scorers: functions which scores the model's output for an ood method e.g. MSP scorer
+scorers: functions that score the model's output for an ood method, e.g. MSP scorer
 
-The python files in subfolders shown in the code structure above are interfaces which you can add a class which inherits them and override the methods.
-For example, if you want to add an outlier dataset to run the benchmarks with, you can add a class in the *datasets* folder and inherit from the *Dataset* class in *dataset.py*.
+The python files in subfolders shown in the code structure above are interfaces for which you can add a class that inherits them and overrides their methods.
+For example, if you want to add an outlier dataset to run the benchmarks with, you can add a class in the *datasets* folder and inherit the *Dataset* class in *dataset.py*.
 
 As this repo is for evaluation, for adding a method, please do not provide code for training and also do not commit model checkpoints as it makes the repo too big. Instead, please upload your pre-trained model on the internet and download and load the model in the code.
