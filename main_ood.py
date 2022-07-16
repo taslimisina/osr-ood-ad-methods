@@ -7,15 +7,22 @@ from ood.evaluator import Evaluator
 from ood.ood_methods.msp import Msp
 from ood.ood_methods.msp_oe import MspOE
 
+
+cifar10 = Cifar10Dataset()
+cifar100 = Cifar100Dataset()
+criteria = [Auroc(), Aupr(), Fpr()]
+
 benchmarks = []
-
 # Cifar10
-benchmarks.append(Evaluator(Msp(), Cifar10Dataset(), Cifar100Dataset(), [Auroc(), Aupr(), Fpr()]))
-benchmarks.append(Evaluator(MspOE(), Cifar10Dataset(), Cifar100Dataset(), [Auroc(), Aupr(), Fpr()]))
-
+benchmarks.extend([
+    Evaluator(Msp(), cifar10, cifar100, criteria),
+    Evaluator(MspOE(), cifar10, cifar100, criteria)
+])
 # Cifar100
-benchmarks.append(Evaluator(Msp(), Cifar100Dataset(), Cifar10Dataset(), [Auroc(), Aupr(), Fpr()]))
-benchmarks.append(Evaluator(MspOE(), Cifar100Dataset(), Cifar10Dataset(), [Auroc(), Aupr(), Fpr()]))
+benchmarks.extend([
+    Evaluator(Msp(), cifar100, cifar10, criteria),
+    Evaluator(MspOE(), cifar100, cifar10, criteria)
+])
 
 def main():
     for i, evaluator in enumerate(benchmarks):
