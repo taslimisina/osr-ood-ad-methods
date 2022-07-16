@@ -6,7 +6,9 @@ from ood.datasets.cifar10_dataset import Cifar10Dataset
 from ood.evaluator import Evaluator
 from ood.ood_methods.msp import Msp
 from ood.ood_methods.msp_oe import MspOE
+import torch.backends.cudnn as cudnn
 
+cudnn.benchmark = True
 
 cifar10 = Cifar10Dataset()
 cifar100 = Cifar100Dataset()
