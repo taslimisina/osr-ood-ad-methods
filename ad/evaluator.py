@@ -21,7 +21,7 @@ class Evaluator:
 
     @torch.no_grad()
     def evaluate(self):
-        model = self.ad_method.get_trained_arch()
+        model = self.ad_method.get_trained_arch(self.dataset.get_name())
         model.eval()
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

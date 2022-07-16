@@ -7,7 +7,7 @@ class AdMethod:
         self.arch = arch
         self.scorer = scorer
 
-    def get_trained_arch(self):
+    def get_trained_arch(self, dataset: str):
         raise NotImplementedError
 
     def get_normal_class(self) -> int:

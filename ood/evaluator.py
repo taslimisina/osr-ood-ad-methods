@@ -22,7 +22,7 @@ class Evaluator:
 
     @torch.no_grad()
     def evaluate(self):
-        model = self.ood_method.get_trained_arch()
+        model = self.ood_method.get_trained_arch(self.inlier_dataset.get_name())
         inlier_testset = self.inlier_dataset.get_testset(self.ood_method.get_transform())
         inlier_testloader = self.inlier_dataset.get_testloader(
             inlier_testset, self.batch_size, self.shuffle, self.num_workers, self.pin_memory)
