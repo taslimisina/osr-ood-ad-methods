@@ -5,7 +5,7 @@ from torchvision.transforms import transforms
 from ood.archs.wrn import WideResNet
 from ood.datasets.dataset import Dataset
 from ood.ood_methods.ood_method import OodMethod
-from ood.scorers.msp_scorer import MspScorer
+from ood.scorers.mlv_scorer import MlvScorer
 import torch
 import requests
 
@@ -17,11 +17,11 @@ ckpt_urls = {
                 '/baseline/cifar100_calib_wrn_baseline_epoch_99.pt'
 }
 
-class Msp(OodMethod):
+class Mlv(OodMethod):
 
     def __init__(self, dataset: Dataset):
         super().__init__(WideResNet(depth=40, num_classes=dataset.get_num_classes(), widen_factor=2, dropRate=0.3),
-                         MspScorer(), dataset)
+                         MlvScorer(), dataset)
 
     def get_transform(self):
         mean = [x / 255 for x in [125.3, 123.0, 113.9]]
@@ -45,4 +45,4 @@ class Msp(OodMethod):
         return self.arch
 
     def __str__(self):
-        return 'MSP'
+        return 'MLV'

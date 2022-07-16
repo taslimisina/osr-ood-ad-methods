@@ -35,11 +35,12 @@ class MspOE(OodMethod):
             print(dataset, 'dataset is not available!')
             return
         ckpt_url = ckpt_urls[dataset]
-        response = requests.get(ckpt_url)
         os.makedirs('./checkpoints/', exist_ok=True)
         file = './checkpoints/' + ckpt_url.split('/')[-1]
-        with open(file, 'wb') as handle:
-            handle.write(response.content)
+        if not os.path.exists(file):
+            response = requests.get(ckpt_url)
+            with open(file, 'wb') as handle:
+                handle.write(response.content)
         self.arch.load_state_dict(torch.load(file))
         return self.arch
 
