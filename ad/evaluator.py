@@ -60,5 +60,5 @@ class Evaluator:
         return 'ad_method: ' + str(self.ad_method) + '\t' + \
             'dataset: ' + self.dataset.get_name() + '\t' + \
             'normal_class: ' + str(self.ad_method.get_normal_class()) + '\t' + \
-            'criteria: ' + str(self.criteria) + '\t' + \
+            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '\t' + \
             'batch_size: ' + str(self.batch_size)

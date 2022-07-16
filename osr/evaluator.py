@@ -60,5 +60,5 @@ class Evaluator:
         return 'osr_method: ' + str(self.osr_method) + '\t' + \
             'dataset: ' + self.dataset.get_name() + '\t' + \
             'closed_set: ' + str(self.osr_method.get_closed_set()) + '\t' + \
-            'criteria: ' + str(self.criteria) + '\t' + \
+            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '\t' + \
             'batch_size: ' + str(self.batch_size)
