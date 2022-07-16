@@ -11,4 +11,4 @@ class Cifar10Dataset(Dataset):
         return 10
 
     def get_testset(self, transform):
-        return CIFAR10('./cifar10', train=False, transform=transform, download=True)
+        return CIFAR10('./data/cifar10', train=False, transform=transform, download=True)

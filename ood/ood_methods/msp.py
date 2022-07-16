@@ -34,7 +34,7 @@ class Msp(OodMethod):
             return
         ckpt_url = ckpt_urls[dataset]
         response = requests.get(ckpt_url)
-        file = 'msp_checkpoint.pt'
+        file = './checkpoints/' + ckpt_url.split('/')[-1]
         with open(file, 'wb') as handle:
             handle.write(response.content)
         self.arch.load_state_dict(torch.load(file))
