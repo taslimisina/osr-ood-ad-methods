@@ -57,8 +57,8 @@ class Evaluator:
             print(critic.get_name(), eval_score)
 
     def __str__(self):
-        return 'osr_method: ' + str(self.osr_method) + '\t' + \
-            'dataset: ' + self.dataset.get_name() + '\t' + \
-            'closed_set: ' + str(self.osr_method.get_closed_set()) + '\t' + \
-            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '\t' + \
+        return 'osr_method: ' + str(self.osr_method) + '  ' + \
+            'dataset: ' + self.dataset.get_name() + '  ' + \
+            'closed_set: ' + str(self.osr_method.get_closed_set()) + '  ' + \
+            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '  ' + \
             'batch_size: ' + str(self.batch_size)

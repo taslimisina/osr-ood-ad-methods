@@ -34,7 +34,8 @@ benchmarks.extend([
 
 def main():
     for i, evaluator in enumerate(benchmarks):
-        print('\nBenchmark', i, ':', evaluator)
+        print('\nBenchmark', i, ':')
+        print(evaluator)
         evaluator.evaluate()
 
 

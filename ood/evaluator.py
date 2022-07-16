@@ -50,8 +50,8 @@ class Evaluator:
             print(critic.get_name(), critic.evaluate(inlier_scores, outlier_scores))
 
     def __str__(self):
-        return 'ood_method: ' + str(self.ood_method) + '\t' + \
-            'inlier_dataset: ' + self.inlier_dataset.get_name() + '\t' + \
-            'outlier_dataset: ' + self.outlier_dataset.get_name() + '\t' + \
-            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '\t' + \
+        return 'ood_method: ' + str(self.ood_method) + '  ' + \
+            'inlier_dataset: ' + self.inlier_dataset.get_name() + '  ' + \
+            'outlier_dataset: ' + self.outlier_dataset.get_name() + '  ' + \
+            'criteria: ' + str([critic.get_name() for critic in self.criteria]) + '  ' + \
             'batch_size: ' + str(self.batch_size)
